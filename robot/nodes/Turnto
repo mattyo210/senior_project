@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+
+# Author : Chayapol Piyaphakdeesakun
+
+import rospy
+from statistics import mean
+from sensor_msgs.msg import LaserScan
+from geometry_msgs.msg import Twist
+import atexit
+import time
+
+pub = ''
+
+class Obstacle():
+	def __init__(self):
+		self.LIDAR_ERR = 0.05
+		self._cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+		global pub
+		pub = self._cmd_pub
+		self.obstacle()
+
+	def get_scan(self):
+		msg = rospy.wait_for_message("scan", LaserScan)
+		self.scan_filter = []
+		for i in range(360):
+			if msg.ranges[i] >= self.LIDAR_ERR:
+				self.scan_filter.append(msg.ranges[i])
+
+	def obstacle(self):
+		self.twist = Twist()
+
+		try:
+			endTime=time.time()+3
+			while time.time() > endTime :
+				print(time.time())
+				self.twist.angular.z = 1.0
+			self.twist.angular.z = 0.0
+			self._cmd_pub.publish(self.twist)
+		except KeyboardInterrupt:
+			stop()
+
+def stop():
+	print('Stopping robot')
+	twist = Twist()
+	twist.linear.x = 0.0
+	twist.angular.z = 0.0
+	pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+	pub.publish(twist)
+
+def main():
+	rospy.init_node('run')
+	rospy.on_shutdown(stop)
+
+	try:
+		obstacle = Obstacle()
+	except rospy.ROSInterruptException:
+		pass
+if __name__ == '__main__':
+	atexit.register(stop)
+	main()

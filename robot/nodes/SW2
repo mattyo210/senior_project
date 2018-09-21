@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+
+# Author : Chayapol Piyaphakdeesakun
+
+import rospy
+from sensor_msgs.msg import LaserScan
+from geometry_msgs.msg import Twist
+import atexit
+from time import sleep
+
+pub = ''
+
+class Obstacle():
+	def __init__(self):
+		self.LIDAR_ERR = 0.05
+		self._cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+		global pub
+		pub = self._cmd_pub
+		self.obstacle()
+
+	def get_scan(self):
+		msg = rospy.wait_for_message("scan", LaserScan)
+		self.scan_filter = []
+		for i in range(360):
+			self.scan_filter.append(msg.ranges[i])
+
+
+	def obstacle(self):
+		self.twist = Twist()
+		
+		while not rospy.is_shutdown():
+			try:
+				self.get_scan()
+				if len(self.scan_filter)==0 :
+					self.twist.linear.x =0.0
+				elif self.scan_filter.index(min(self.scan_filter))<70 or self.scan_filter.index(min(self.scan_filter))>290  :
+					print(min(self.scan_filter))
+					self.twist.linear.x =0.0
+					self._cmd_pub.publish(self.twist)
+					sleep(1)
+					turn_to(self.scan_filter.index(max(self.scan_filter)))
+					print(self.scan_filter.index(max(self.scan_filter)))
+					print(max(self.scan_filter))
+					self._cmd_pub.publish(self.twist)
+				else :
+					print("before" + str(self.scan_filter[0]))
+					go_to((self.scan_filter[0]-0.2)*100)
+				self._cmd_pub.publish(self.twist)
+				sleep(1)
+			except KeyboardInterrupt:
+				stop()
+
+def turn_to(degrees):
+	twist = Twist()
+	sdegree=degrees % 360
+	print(sdegree)
+	if sdegree >180 :
+		lsdegree=360-sdegree
+		time=lsdegree/56
+		twist.angular.z = -1.0
+	else :
+		time=sdegree/56
+		twist.angular.z = 1.0
+	sleep(2)
+	pub.publish(twist)
+	sleep(time)
+	twist.angular.z = 0.0
+	pub.publish(twist)
+
+def go_to(centi):
+	twist = Twist()
+	sleep(2)
+	a=1
+	if centi<0:
+		a=-1
+		centi=centi*a
+	twist.angular.z = 0.0
+	pub.publish(twist)
+	twist.linear.x = a*0.5
+	pub.publish(twist)
+	time=centi/10
+	sleep(time)
+	twist.angular.z = 0.0
+	pub.publish(twist)
+	twist.linear.x = 0.0
+	pub.publish(twist)
+	
+
+def stop():
+	print('Stopping robot')
+	twist = Twist()
+	twist.linear.x = 0.0
+	twist.angular.z = 0.0
+	pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+	pub.publish(twist)
+
+def main():
+	rospy.init_node('run')
+	rospy.on_shutdown(stop)
+
+	try:
+		obstacle = Obstacle()
+	except rospy.ROSInterruptException:
+		pass
+if __name__ == '__main__':
+	atexit.register(stop)
+	main()
