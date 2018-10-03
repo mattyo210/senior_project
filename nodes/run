@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+
+# Author : Chayapol Piyaphakdeesakun
+
+import rospy
+from sensor_msgs.msg import LaserScan
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+from sensor_msgs.msg import MagneticField
+from turtlebot3_msgs.msg import Sound
+import atexit
+import math
+
+pub = ''
+
+class Obstacle():
+	def __init__(self):
+		self.LIDAR_ERR = 0.05
+		self._cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+		self._sound_pub = rospy.Publisher('sound', Sound, queue_size=10)
+		global pub
+		pub = self._cmd_pub
+		global pub2
+		pub2 = self._sound_pub
+		self.obstacle()
+
+	def get_scan(self):
+		msg = rospy.wait_for_message("scan", LaserScan)
+		self.scan_filter = []
+		for i in range(360):
+			if i <= 15 or i > 335:
+				if msg.ranges[i] >= self.LIDAR_ERR:
+					self.scan_filter.append(msg.ranges[i])
+
+	def get_odom(self):
+		msg = rospy.wait_for_message("odom", Odometry)
+		self.odom_pos_x = msg.pose.pose.position.x
+		self.odom_pos_y = msg.pose.pose.position.y
+		self.odom_pos_z = msg.pose.pose.position.z
+
+		self.odom_ori_x = msg.pose.pose.orientation.x
+		self.odom_ori_y = msg.pose.pose.orientation.y
+		self.odom_ori_z = msg.pose.pose.orientation.z
+		self.odom_ori_w = msg.pose.pose.orientation.w
+
+		self.odom_lin_x = msg.twist.twist.linear.x
+		self.odom_lin_y = msg.twist.twist.linear.y
+		self.odom_lin_z = msg.twist.twist.linear.z
+
+		self.odom_ang_x = msg.twist.twist.angular.x
+		self.odom_ang_y = msg.twist.twist.angular.y
+		self.odom_ang_z = msg.twist.twist.angular.z
+
+	def get_mag(self):
+		msg = rospy.wait_for_message("magnetic_field", MagneticField)
+		self.mag_x = msg.magnetic_field.x
+		self.mag_y = msg.magnetic_field.y
+		self.mag_z = msg.magnetic_field.z
+
+	def obstacle(self):
+		self.twist = Twist()
+
+		while not rospy.is_shutdown():
+			try:
+				#self._sound_pub.publish(1)
+				self.get_scan()
+
+				self.get_odom()
+				print("Odometry:position")
+				print(self.odom_pos_x)
+				print(self.odom_pos_y)
+				print(self.odom_pos_z)
+				print("Odometry:orientation")
+				#print(self.odom_ori_x)
+				#print(self.odom_ori_y)
+				#print(self.odom_ori_z)
+				#print(self.odom_ori_w)
+				#print("Odometry:linear")
+				#print(self.odom_lin_x)
+				#print(self.odom_lin_y)
+				#print("Odometry:ang")
+				#print(self.odom_ang_z)
+
+				self.get_mag()
+				#print("MagneticField")
+				#print(self.mag_x)
+				#print(self.mag_y)
+				#print(self.mag_z)
+				if self.mag_x != 0 and self.mag_y != 0 :
+					rad = math.atan(self.mag_y / self.mag_x)
+					deg = math.degrees(rad)
+					#print("Angule : ", deg)
+
+				#print("LaserScan")
+				#print(min(self.scan_filter))
+				#if min(self.scan_filter) < 0.33:
+					#self.twist.linear.x = 0.0
+				#else :	
+					
+				self.twist.linear.x = 0.5
+					#self.twist.angular.z = 0.05
+				self._cmd_pub.publish(self.twist)
+			except KeyboardInterrupt:
+				stop()
+
+def stop():
+	print('Stopping robot')
+	twist = Twist()
+	twist.linear.x = 0.0
+	twist.angular.z = 0.0
+	pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+	pub.publish(twist)
+	#pub2 = rospy.Publisher('sound', Sound, queue_size=1)
+	#pub2.publish(0)	
+
+def main():
+	rospy.init_node('run')
+	rospy.on_shutdown(stop)
+
+	try:
+		obstacle = Obstacle()
+	except rospy.ROSInterruptException:
+		pass
+if __name__ == '__main__':
+	atexit.register(stop)
+	main()

@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+
+# Author : Chayapol Piyaphakdeesakun
+
+import rospy
+from sensor_msgs.msg import LaserScan
+from geometry_msgs.msg import Twist
+from turtlebot3_msgs.msg import Sound
+import atexit
+from time import sleep
+
+pub = ''
+
+class Obstacle():
+	def __init__(self):
+		self.LIDAR_ERR = 0.05
+		self._cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+		self._sound_pub = rospy.Publisher('sound', Sound, queue_size=10)
+		global pub
+		pub = self._cmd_pub
+		global pub2
+		pub2 = self._sound_pub
+		self.obstacle()
+
+	def get_scan(self):
+		msg = rospy.wait_for_message("scan", LaserScan)
+		self.scan_filter = []
+		for i in range(360):
+			self.scan_filter.append(msg.ranges[i])
+
+
+	def obstacle(self):
+		self.twist = Twist()
+
+		while not rospy.is_shutdown():
+			try:
+				self._sound_pub.publish(1)
+				self.get_scan()
+                                max_index=self.scan_filter.index(max(max(self.scan_filter[:90]),max(self.scan_filter[270:])))
+				right=list(filter(lambda x: x > 0.05, self.scan_filter[:30]))
+				left=list(filter(lambda x: x > 0.05, self.scan_filter[330:]))
+				if max_index<45 :
+					max_index= max_index + 45
+				elif max_index>315 :
+					max_index= max_index - 45
+					
+				front=right + left
+				if min(front) < 0.20:
+					turn_to(max_index)
+					sleep(2)
+					go_to(-10)
+				else :
+					go_to((min(front)-0.15)*100)
+
+			except KeyboardInterrupt:
+				stop()
+
+def turn_to(degrees):
+	twist = Twist()
+	sdegree=degrees % 360
+	print("degree :"+str(sdegree))
+	if sdegree >180 :
+		lsdegree=360-sdegree
+		time=lsdegree/50
+		twist.angular.z = -1.0
+	else :
+		time=sdegree/50
+		twist.angular.z = 1.0
+	sleep(2)
+	pub.publish(twist)
+	sleep(time)
+	twist.angular.z = 0.0
+	pub.publish(twist)
+
+def go_to(centi):
+	print("centi"+str(centi))
+	twist = Twist()
+	sleep(2)
+	a=1
+	if centi<0:
+		a=-1
+		centi=centi*a
+	twist.angular.z = 0.0
+	pub.publish(twist)
+	twist.linear.x = a*0.5
+	pub.publish(twist)
+	time=centi/20
+	sleep(time)
+	twist.angular.z = 0.0
+	pub.publish(twist)
+	twist.linear.x = 0.0
+	pub.publish(twist)
+	
+
+def stop():
+	print('Stopping robot')
+	twist = Twist()
+	twist.linear.x = 0.0
+	twist.angular.z = 0.0
+	pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+	pub.publish(twist)
+	pub2 = rospy.Publisher('sound', Sound, queue_size=1)
+	pub2.publish(0)	
+
+def main():
+	rospy.init_node('run')
+	rospy.on_shutdown(stop)
+
+	try:
+		obstacle = Obstacle()
+	except rospy.ROSInterruptException:
+		pass
+if __name__ == '__main__':
+	atexit.register(stop)
+	main()
