@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+
+# Author : Chayapol Piyaphakdeesakun
+
+import rospy
+from sensor_msgs.msg import LaserScan
+from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
+from sensor_msgs.msg import MagneticField
+from turtlebot3_msgs.msg import Sound
+import atexit
+import math
+
+pub = ''
+
+class Obstacle():
+	def __init__(self):
+		self.LIDAR_ERR = 0.05
+		self._cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+		self._sound_pub = rospy.Publisher('sound', Sound, queue_size=10)
+		global pub
+		allScanList=[]
+		pub = self._cmd_pub
+		global pub2
+		pub2 = self._sound_pub
+		self.obstacle()
+
+	def get_scan(self):
+		msg = rospy.wait_for_message("scan", LaserScan)
+		self.scan_filter = []
+		for i in range(360):
+			self.scan_filter.append(msg.ranges[i])
+
+	def get_odom(self):
+		msg = rospy.wait_for_message("odom", Odometry)
+		self.odom_pos_x = msg.pose.pose.position.x
+		self.odom_pos_y = msg.pose.pose.position.y
+		self.odom_ang_z = msg.twist.twist.angular.z
+
+
+
+	def obstacle(self):
+		self.twist = Twist()
+		allScanList=[]
+		
+		while not rospy.is_shutdown():
+			try:
+				scanlist =[]                                     
+				self.get_scan()
+
+				self.get_odom()
+				
+				scanlist += [self.odom_pos_x, self.odom_pos_y, self.odom_ang_z]
+				scanlist +=self.scan_filter
+				
+				allScanList.append(scanlist)
+
+				print(allScanList)
+				if min(self.scan_filter) < 0.33:
+					self.twist.linear.x = 0.0
+				else :	
+					self.twist.linear.x = 0.5
+				self.twist.angular.z = 0.05
+				self._cmd_pub.publish(self.twist)
+			except KeyboardInterrupt:
+				stop()
+
+def stop():
+	print('Stopping robot')
+	twist = Twist()
+	twist.linear.x = 0.0
+	twist.angular.z = 0.0
+	pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+	pub.publish(twist)
+	#pub2 = rospy.Publisher('sound', Sound, queue_size=1)
+	#pub2.publish(0)	
+
+def main():
+	rospy.init_node('run')
+	rospy.on_shutdown(stop)
+
+	try:
+		obstacle = Obstacle()
+	except rospy.ROSInterruptException:
+		pass
+if __name__ == '__main__':
+	atexit.register(stop)
+	main()
