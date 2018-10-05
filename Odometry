@@ -35,12 +35,12 @@ class Obstacle():
 		msg = rospy.wait_for_message("odom", Odometry)
 		self.odom_pos_x = msg.pose.pose.position.x
 		self.odom_pos_y = msg.pose.pose.position.y
-		self.odom_ang_z = msg.twist.twist.angular.z
 
 
 
 	def obstacle(self):
 		self.twist = Twist()
+
 		allScanList=[]
 		
 		while not rospy.is_shutdown():
@@ -50,7 +50,7 @@ class Obstacle():
 
 				self.get_odom()
 				
-				scanlist += [self.odom_pos_x, self.odom_pos_y, self.odom_ang_z]
+				scanlist += [self.odom_pos_x, self.odom_pos_y, math.atan2(self.odom_pos_y, self.odom_pos_x)]
 				scanlist +=self.scan_filter
 				
 				allScanList.append(scanlist)
