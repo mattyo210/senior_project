@@ -10,9 +10,10 @@ from sensor_msgs.msg import MagneticField
 from turtlebot3_msgs.msg import Sound
 import atexit
 import math
+import filetest
 
 pub = ''
-
+allscandata=""
 class Obstacle():
 	def __init__(self):
 		self.LIDAR_ERR = 0.05
@@ -40,9 +41,7 @@ class Obstacle():
 
 	def obstacle(self):
 		self.twist = Twist()
-
-		allScanList=[]
-		
+		allScandata=""
 		while not rospy.is_shutdown():
 			try:
 				scanlist =[]                                     
@@ -53,9 +52,13 @@ class Obstacle():
 				scanlist += [self.odom_pos_x, self.odom_pos_y, math.atan2(self.odom_pos_y, self.odom_pos_x)]
 				scanlist +=self.scan_filter
 				
-				allScanList.append(scanlist)
+				scandata=" ".join(map(str, scanlist))+ "\n"
 
-				print(allScanList)
+				
+				global allscandata
+				allscandata +=scandata
+				
+				
 				if min(self.scan_filter) < 0.33:
 					self.twist.linear.x = 0.0
 				else :	
@@ -67,6 +70,7 @@ class Obstacle():
 
 def stop():
 	print('Stopping robot')
+	filetest.scan_write(allscandata)
 	twist = Twist()
 	twist.linear.x = 0.0
 	twist.angular.z = 0.0
