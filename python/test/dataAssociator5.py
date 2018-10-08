@@ -5,18 +5,10 @@ import math
 class DataAssociator():
 
 	def __init__(self):
-		global evmin_
-		global variation
-		global k
-		evmin_ = []
-		variation = np.inf
-		k = -1
 		self.file_read()
 
 
 	def file_read(self):
-		global cur_scan
-		count = 0
 		path = 'scandata.txt'
 	    	with open(path) as f:
 			a = []
@@ -30,73 +22,59 @@ class DataAssociator():
 				for j in b:
 					numbers.append(float(j))
 				a.append(numbers)
+			
 		scan = np.array(a)
 		#print(scan[152])
-
-		for i in range(len(c)-1):
-			if count ==0:
-				rlp = self.globalpoint(scan[i])
-				glp = self.globalpoint(scan[i+1])
-			elif count > 0:
-				glp = self.globalpoint(scan[i+1])
-			cur_scan = scan[i+1]
-			self.find_correspondence(rlp, glp)
-			rlp = glp
-			count += 1
+		self.find_correspondence(len(c)-1, scan)
 
 
-	def find_correspondence(self, rlp, glp):
-		global evmin_
-		global variation
-		global k
-		global cur_scan
+	def find_correspondence(self, scan_len, scan):
 		DTHRE = 0.2	
+		rlp = []
+		glp = []
 		global ref_lps
 		ref_lps = []
 		global cur_lps
 		cur_lps = []
 		count = 0
 		evthre = 0.000001
-		
-		for i in range(len(glp)): # glp
-			dmin = np.inf
-			rlpmin = None
-			for j in range(len(rlp)): # rlp
-				d = (glp[i][0] - rlp[j][0])**2 + (glp[i][1]-rlp[j][1])**2
-				if d <= DTHRE**2 and d < dmin:
-					dmin = d
-					rlpmin = rlp[j]
-		
-			if rlpmin is not None:
-				cur_lps.append(glp[i])
-				ref_lps.append(rlpmin)
 
-		opt_cur = self.optimize_pose(cur_scan)
-		evmin_.append(opt_cur[3])
-		#print(evmin_)
-		k += 1
-		print(k)
-		if len(evmin_) >= 2:
-			variation = evmin_[k-1] - evmin_[k]
-		while evthre < variation:
-			for l in range(3):
-				cur_scan[l] = opt_cur[l]
-			glp = self.globalpoint(cur_scan)
-			self.find_correspondence(rlp, glp)
+		for k in range(scan_len):
+			evmin = []
+			variation = np.inf
+			if count ==0:
+				rlp = self.globalpoint(scan[k])
+				glp = self.globalpoint(scan[k+1])
+			elif count > 0:
+				glp = self.globalpoint(scan[k+1])
 
-		#kokodefailenikakikomu
-		f = open("data.txt","a")
-		maped_glp = map(str,glp)
-		mojiretsu = ','.join(maped_glp)
-		f.write(mojiretsu)
-		f.write("\n")
-		f.close()
+			for i in range(len(glp)): # glp
+				dmin = np.inf
+				rlpmin = None
+				for j in range(len(rlp)): # rlp
+					d = (glp[i][0] - rlp[j][0])**2 + (glp[i][1]-rlp[j][1])**2
+					if d <= DTHRE**2 and d < dmin:
+						dmin = d
+						rlpmin = rlp[j]
+			
+				if rlpmin is not None:
+					#print(rlpmin)
+					#print(i, glp[i])
+					cur_lps.append(glp[i])
+					ref_lps.append(rlpmin)
 
-		print(opt_cur[0],opt_cur[1],opt_cur[2])
-		#print(glp)
-		evmin_ = []
-		variation = np.inf
-		k = -1
+			#print(len(ref_lps))
+			#for l in range(len(ref_lps)):
+			#	print("find_correspondence", l)
+			#	print(cur_lps[l])
+			#	print(ref_lps[l])
+			#print(cur_lps, ref_lps)
+			#quit()
+
+			self.optimize_pose(scan[k+1])
+
+			count+=1
+			rlp = glp
 
 
 	def globalpoint(self, glp):
@@ -151,7 +129,7 @@ class DataAssociator():
 				tymin = ty
 				thmin = th
 
-		#print(tx, ty, th)
+		print(tx, ty, th)
 		return tx, ty, th, evmin
 		
 

@@ -5,99 +5,25 @@ import math
 class DataAssociator():
 
 	def __init__(self):
-		global evmin_
-		global variation
-		global k
-		evmin_ = []
-		variation = np.inf
-		k = -1
-		self.file_read()
-
-
-	def file_read(self):
-		global cur_scan
-		count = 0
+		
 		path = 'scandata.txt'
-	    	with open(path) as f:
+    		with open(path) as f:
 			a = []
 			b = []
 			c = []
 			c = f.read().splitlines()
-			#print(len(c))
-			for i in range(len(c)):
+			for i in range(2):
 				b = c[i].split( )
 				numbers = []
 				for j in b:
 					numbers.append(float(j))
+				#print(numbers)
 				a.append(numbers)
+		
 		scan = np.array(a)
-		#print(scan[152])
-
-		for i in range(len(c)-1):
-			if count ==0:
-				rlp = self.globalpoint(scan[i])
-				glp = self.globalpoint(scan[i+1])
-			elif count > 0:
-				glp = self.globalpoint(scan[i+1])
-			cur_scan = scan[i+1]
-			self.find_correspondence(rlp, glp)
-			rlp = glp
-			count += 1
-
-
-	def find_correspondence(self, rlp, glp):
-		global evmin_
-		global variation
-		global k
-		global cur_scan
-		DTHRE = 0.2	
-		global ref_lps
-		ref_lps = []
-		global cur_lps
-		cur_lps = []
-		count = 0
-		evthre = 0.000001
-		
-		for i in range(len(glp)): # glp
-			dmin = np.inf
-			rlpmin = None
-			for j in range(len(rlp)): # rlp
-				d = (glp[i][0] - rlp[j][0])**2 + (glp[i][1]-rlp[j][1])**2
-				if d <= DTHRE**2 and d < dmin:
-					dmin = d
-					rlpmin = rlp[j]
-		
-			if rlpmin is not None:
-				cur_lps.append(glp[i])
-				ref_lps.append(rlpmin)
-
-		opt_cur = self.optimize_pose(cur_scan)
-		evmin_.append(opt_cur[3])
-		#print(evmin_)
-		k += 1
-		print(k)
-		if len(evmin_) >= 2:
-			variation = evmin_[k-1] - evmin_[k]
-		while evthre < variation:
-			for l in range(3):
-				cur_scan[l] = opt_cur[l]
-			glp = self.globalpoint(cur_scan)
-			self.find_correspondence(rlp, glp)
-
-		#kokodefailenikakikomu
-		f = open("data.txt","a")
-		maped_glp = map(str,glp)
-		mojiretsu = ','.join(maped_glp)
-		f.write(mojiretsu)
-		f.write("\n")
-		f.close()
-
-		print(opt_cur[0],opt_cur[1],opt_cur[2])
-		#print(glp)
-		evmin_ = []
-		variation = np.inf
-		k = -1
-
+		#print(scan[0])
+		#print(scan[1])
+		self.find_correspondence(scan)
 
 	def globalpoint(self, glp):
 		a = []
@@ -112,6 +38,51 @@ class DataAssociator():
 		data = np.array(a)
 		return data
 
+	def find_correspondence(self, scan):
+		DTHRE = 0.2	
+		rlp = []
+		glp = []
+		global ref_lps
+		ref_lps = []
+		global cur_lps
+		cur_lps = []
+
+		rlp = self.globalpoint(scan[0])
+		glp = self.globalpoint(scan[1])
+
+		# print(rlp)
+		# print(glp)
+
+		for i in range(len(glp)): # glp
+			dmin = np.inf
+			#dmin = 1000
+			rlpmin = None
+			for j in range(len(rlp)): # rlp
+				d = (glp[i][0] - rlp[j][0])**2 + (glp[i][1]-rlp[j][1])**2
+				#print(d)
+				if d <= DTHRE**2 and d < dmin:
+					dmin = d
+					rlpmin = rlp[j]
+			
+			if rlpmin is not None:
+				#print(rlpmin)
+				#print(i, glp[i])
+				cur_lps.append(glp[i])
+				ref_lps.append(rlpmin)
+
+		#print(cur_lps)
+		#print(ref_lps)
+
+		# ref = glp
+		#print(len(ref_lps))
+		#for k in range(len(ref_lps)):
+		#	print("find_correspondence", k)
+		#	print(cur_lps[k])
+		#	print(ref_lps[k])
+		# print(cur_lps, ref_lps)
+
+		self.optimize_pose(scan[1])
+
 
 	def optimize_pose(self, init_pose):
 		tx = init_pose[0]
@@ -123,7 +94,7 @@ class DataAssociator():
 		evmin = np.inf
 		evold = evmin
 		# cost
-		evthre = 0.5
+		evthre = 1.0
 		dd = 0.1
 		da = 0.1
 
@@ -151,8 +122,7 @@ class DataAssociator():
 				tymin = ty
 				thmin = th
 
-		#print(tx, ty, th)
-		return tx, ty, th, evmin
+		print(tx, ty, th)
 		
 
 	def cal_value(self, tx, ty, th):
