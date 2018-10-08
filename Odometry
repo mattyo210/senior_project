@@ -11,7 +11,6 @@ from turtlebot3_msgs.msg import Sound
 import atexit
 import math
 import filetest
-
 pub = ''
 allscandata=""
 class Obstacle():
@@ -59,18 +58,27 @@ class Obstacle():
 				allscandata +=scandata
 				
 				
-				if min(self.scan_filter) < 0.33:
-					self.twist.linear.x = 0.0
-				else :	
-					self.twist.linear.x = 0.5
-				self.twist.angular.z = 0.05
-				self._cmd_pub.publish(self.twist)
+				#if min(self.scan_filter) < 0.33:
+					#self.twist.linear.x = 0.0
+					#self.twist.angular.z = 0.05
+				#else :	
+					#self.twist.linear.x = 0.5
+					
+				#self._cmd_pub.publish(self.twist)
 			except KeyboardInterrupt:
+				filetest.scan_write(allscandata)
 				stop()
+#def scan_write(scanlist):
+	#string="".join(map(str, scanlist))+ "\n"
+	#print(string)
+	#f = open('scandata.txt','a')
+   	#f.write(string)
+	#f.close()
+	#print("fileclose")
+
 
 def stop():
 	print('Stopping robot')
-	filetest.scan_write(allscandata)
 	twist = Twist()
 	twist.linear.x = 0.0
 	twist.angular.z = 0.0
