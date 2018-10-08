@@ -29,10 +29,10 @@ git checkout -b test
 git add .  
 git commit -m “white change”  
 
-Git push origin test  
+git push origin test  
 
 ここで  
-Git  checkout master  
+git  checkout master  
 ここまでで各自の修正や、開発は終わり。  
 GitHubの該当プロダクトURLへ飛ぶ’  
 
@@ -48,7 +48,7 @@ Create pull request を選択。（ここで変更内容を記載するフォー
 git fetch origin pull/番号/head:test
 
 とするとあなたの作業ディレクトリに該当ブランチが作られるため  
-Git checkout test  
+git checkout test  
 をし、動作確認をすること  
 
 その後    
