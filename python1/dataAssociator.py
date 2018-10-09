@@ -191,9 +191,9 @@ class DataAssociator():
 			error = error / nn
 			if error == 0:
 				error = np.inf
-
-		pnrate = 1.0 * pn / nn
-		error *= 100
+		else :
+			pnrate = 1.0 * pn / nn
+			error *= 100
 		return(error)
 
 def main():
