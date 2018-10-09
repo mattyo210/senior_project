@@ -2,7 +2,7 @@ import numpy as np
 import re
 import math
 import sys
-sys.setrecursionlimit(10000)
+sys.setrecursionlimit(1000000)
 
 class DataAssociator():
 
