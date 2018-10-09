@@ -37,6 +37,14 @@ class DataAssociator():
 			if count ==0:
 				rlp = self.globalpoint(scan[i])
 				glp = self.globalpoint(scan[i+1])
+
+				f = open("data.txt","a")
+				maped_glp = map(str,rlp)
+				mojiretsu = ','.join(maped_glp)
+				f.write(mojiretsu)
+				f.write("\n")
+				f.close()
+
 			elif count > 0:
 				glp = self.globalpoint(scan[i+1])
 			cur_scan = scan[i+1]
@@ -103,8 +111,8 @@ class DataAssociator():
 		a = []
 		for i in range(3,len(glp)):
 			# fildata(odometry(x,y,z)+scan(0..359))
-			glp_x = glp[0] + glp[i] * math.cos(i-3 + glp[2])
-			glp_y = glp[1] + glp[i] * math.sin(i-3 + glp[2])
+			glp_x = glp[0] + glp[i] * math.cos(math.radians(i-3) + glp[2])
+			glp_y = glp[1] + glp[i] * math.sin(math.radians(i-3) + glp[2])
 
 			b = np.array([glp_x, glp_y])
 			a.append(b)
@@ -123,7 +131,7 @@ class DataAssociator():
 		evmin = np.inf
 		evold = evmin
 		# cost
-		evthre = 0.5
+		evthre = 0.2
 		dd = 0.1
 		da = 0.1
 
@@ -134,7 +142,7 @@ class DataAssociator():
 
 			detx = (self.cal_value(tx + dd, ty, th) - ev) / dd
 			dety = (self.cal_value(tx, ty + dd, th) - ev) / dd
-			deth = (self.cal_value(tx, ty, th + da) - ev) / dd
+			deth = (self.cal_value(tx, ty, th + da) - ev) / da
 
 			dx = -kk * detx
 			dy = -kk * dety
@@ -157,7 +165,7 @@ class DataAssociator():
 
 	def cal_value(self, tx, ty, th):
 		global ref_lps, cur_lps
-		evlimit =0.1
+		evlimit = 0.1
 		error = 0
 		pn = 0
 		nn = 0
