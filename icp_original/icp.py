@@ -5,7 +5,6 @@ import math
 def scan_match():
     all_scan=file_read()
     final_map=icp(all_scan)
-    print(final_map)
     file_write(final_map)
     #plot(final_map)
 
@@ -27,7 +26,7 @@ def file_read():
     return scan
 
 def file_write(final_map):
-    f = open("data.txt","w")
+    f = open("data.txt","a")
     maped_clp = map(str,final_map)
     mojiretsu = ','.join(maped_clp)
     f.write(mojiretsu)
@@ -39,28 +38,38 @@ def icp(scan):
     global cur_scan
     final_map=[]
     for i in range(len(scan)-1):
+        print("now..."+str(100*(i+1)/len(scan))+"%")
         if i==0:
             ref_glp=convert_glp(scan[i])
         cur_scan=scan[i+1]
         new_map=optimize()
 
         final_map.append(new_map)
+    file_write(new_map)
     return final_map
 
 def optimize():
     global ref_glp
     global cur_scan
-    error=[np.inf]
+    error=[100000]
     cur_error=0
+    ref_error=1000
     lr=0.01
     e=0.01
-
-    while (min(error)-cur_error)**2<e:
-        x=cur_scan[:3]
+    x=np.array(cur_scan[:3])
+    new_pose=x
+    print("yaa")
+    print("odometry"+str(new_pose))
+    while (min(error)-cur_error)**2>e:
+        error.append(ref_error)
+        x=np.array(cur_scan[:3])
         grad_pose,cur_error=numerical_gradient(loss,x)
-        new_pose=lr*grad_pose
+        new_pose -=lr*grad_pose
+        #print(new_pose)
         cur_scan[:3]=new_pose
-
+        #print(cur_scan[:3])
+        ref_error=cur_error
+    print(cur_scan[:3])
     cur_glp=convert_glp(cur_scan)
     ref_match,cur_match=associate(ref_glp,cur_glp)
     new_map=cur_match
@@ -87,16 +96,15 @@ def numerical_gradient(f, x):
 def loss(x):
     global ref_glp
     global cur_scan
-
+    all_error=0
     cur_scan[:3]=x
     cur_glp=convert_glp(cur_scan)
     ref_match,cur_match=associate(ref_glp,cur_glp)
 
     for i in range(len(cur_match)-1):
         error=(cur_match[0][i]-ref_match[0][i])**2+(cur_match[1][i]-ref_match[1][i])**2
-        all_error+=error
+        all_error += error
     ave_error=error/len(cur_match)
-
     return ave_error
 
 def convert_glp(scan):
@@ -131,7 +139,7 @@ def associate(ref_glp,cur_glp):
         for j in range(len(ref_glp[0])): # rlp
 
             d = (cur_glp[0][i] - ref_glp[0][j])**2 + (cur_glp[1][i] - ref_glp[1][j])**2
-				#print("d= "+str(d))
+            #print("d= "+str(d))
             if d <= DTHRE**2 and d < dmin:
                 dmin = d
                 rlpmin_x = ref_glp[0][j]
@@ -145,7 +153,7 @@ def associate(ref_glp,cur_glp):
 
     cur_match = np.array([cur_x,cur_y])
     ref_match = np.array([ref_x,ref_y])
-    print (cur_match)
+    #print (cur_match)
     return ref_match,cur_match
 
 def main():
