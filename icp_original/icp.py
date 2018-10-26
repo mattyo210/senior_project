@@ -1,12 +1,15 @@
 import numpy as np
 import re
 import math
-
+import Plot
+"display=True"
+plot=True
 def scan_match():
     all_scan=file_read()
     final_map=icp(all_scan)
     file_write(final_map)
-    #plot(final_map)
+    if plot==True:
+        Plot.map_plot()
 
 def file_read():
     path = 'scandata.txt'
@@ -26,26 +29,23 @@ def file_read():
     return scan
 
 def file_write(final_map):
-    f = open("data.txt","a")
-    maped_clp = map(str,final_map)
-    mojiretsu = ','.join(maped_clp)
-    f.write(mojiretsu)
+    f = open("data.txt","w")
+    f.write(final_map)
     f.write("\n")
     f.close()
 
 def icp(scan):
     global ref_glp
     global cur_scan
-    final_map=[]
+    final_map=""
     for i in range(len(scan)-1):
         print("now..."+str(100*(i+1)/len(scan))+"%")
         if i==0:
             ref_glp=convert_glp(scan[i])
         cur_scan=scan[i+1]
         new_map=optimize()
-
-        final_map.append(new_map)
-    file_write(new_map)
+        str_new_map=",".join(map(str, new_map))+ "\n"
+        final_map+=str_new_map
     return final_map
 
 def optimize():
@@ -58,8 +58,8 @@ def optimize():
     e=0.01
     x=np.array(cur_scan[:3])
     new_pose=x
-    print("yaa")
-    print("odometry"+str(new_pose))
+    #print("yaa")
+    #print("odometry"+str(new_pose))
     while (min(error)-cur_error)**2>e:
         error.append(ref_error)
         x=np.array(cur_scan[:3])
@@ -69,7 +69,7 @@ def optimize():
         cur_scan[:3]=new_pose
         #print(cur_scan[:3])
         ref_error=cur_error
-    print(cur_scan[:3])
+    #print(cur_scan[:3])
     cur_glp=convert_glp(cur_scan)
     ref_match,cur_match=associate(ref_glp,cur_glp)
     new_map=cur_match
@@ -153,7 +153,6 @@ def associate(ref_glp,cur_glp):
 
     cur_match = np.array([cur_x,cur_y])
     ref_match = np.array([ref_x,ref_y])
-    #print (cur_match)
     return ref_match,cur_match
 
 def main():
