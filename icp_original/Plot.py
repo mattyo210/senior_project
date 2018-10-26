@@ -2,17 +2,15 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from Point import Point 
-from Association import Association
 import matplotlib.animation as animation
-class Plot:
-    path = "xx.txt"
+def map_plot():
+    path = "data.txt"
     fig = plt.figure()
     with open(path) as f:
         # read from text
         s = f.read()
 
-        print "choose data format 0.(x,y x,y ...) 1.(x,x,x... y,y,y...) ->"
+        print ("choose data format 0.(x,y x,y ...) 1.(x,x,x... y,y,y...) ->")
         Input = input()
         x = []
         y = []
@@ -29,7 +27,7 @@ class Plot:
 
         elif Input == 1:
             s = s.replace("],["," , ")
-            s = s.replace("[","") 
+            s = s.replace("[","")
             s = s.replace("]"," ]")
             sp = s.split()
             count = 0
@@ -37,7 +35,7 @@ class Plot:
                 if sp[i] == "]":
                     count = count + 1
             j = 0
-            for i in range(54):
+            for i in range(count):
                 while sp[j] != ",":
                     x.append(sp[j])
                     j = j + 1
@@ -49,10 +47,12 @@ class Plot:
                 x.remove(b)
             for i in range(len(x)):
                 x[i] = float(x[i])
-            a = y[0] 
+            a = y[0]
             for i in range(y.count(y[0])):
                 y.remove(a)
             for i in range(len(y)):
                 y[i] = float(y[i])
         plt.scatter(x,y,s = 0.4)
         plt.show()
+
+map_plot()
