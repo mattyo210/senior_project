@@ -40,7 +40,7 @@ def icp(scan):
     global cur_match
     global ref_match
     final_map=""
-    e=0.00001
+    e=0.0000001
     for i in range(len(scan)-1):
         icp_error=[10000,1000]
         i_cur_error=100
@@ -70,7 +70,7 @@ def optimize():
     error=[100000,1000]
     cur_error=100
     lr=0.001
-    e=0.001
+    e=0.000001
     x=np.array(cur_scan[:3])
     new_pose=x
     #print("yaa")
@@ -87,7 +87,7 @@ def optimize():
     return cur_scan,cur_error
 
 def numerical_gradient(f, x):
-    h= 1e-4 # 0.0001
+    h= 1e-5 # 0.0001
     grad = np.zeros_like(x)
     error=f(x)
     it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
@@ -140,7 +140,7 @@ def convert_glp(scan):
     return glp
 
 def associate(ref_glp,cur_scan):
-    DTHRE = 1.0
+    DTHRE = 0.1
     evthre = 0.1
     cur_x = []
     cur_y = []
