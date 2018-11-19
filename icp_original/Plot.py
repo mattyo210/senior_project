@@ -4,9 +4,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
-def map_plot():
-    path = "data.txt"
+def map_plot(filename):
     fig = plt.figure()
+    map=map_make(filename)
+    x=map[0]
+    y=map[1]
+    plt.scatter(y,x,s = 0.4)
+    plt.show()
+
+def map_make(filename):
+    path = filename
     with open(path) as f:
         # read from text
         s = f.read()
@@ -48,5 +55,6 @@ def map_plot():
             y.remove(right)
         for i in range(len(y)):
             y[i] = float(y[i])
-    plt.scatter(y,x,s = 0.4)
-    plt.show()
+
+        map=np.array([x,y])
+        return map

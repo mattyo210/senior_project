@@ -1,3 +1,8 @@
+
+
+print(rob)
+
+'''
 import numpy as np
 import icp_matrix
 ref_match=np.array([[0,1,2,2,2,1,0,0],
@@ -33,3 +38,4 @@ for i in range(len(a)-1):
     error2=(a[0][i]-e[0][i])**2+(a[1][i]-e[1][i])**2
     all_error += error2
 print(all_error)
+'''
