@@ -96,7 +96,7 @@ def optimize():
     return cur_scan,cur_error
 
 def numerical_gradient(f, x):
-    h= 1e-5 # 0.0001
+    h= 1e-7 # 0.0001
     grad = np.zeros_like(x)
     error=f(x)
     it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])

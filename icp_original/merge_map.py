@@ -6,8 +6,8 @@ import Plot
 import icp_matrix
 np.set_printoptions(threshold=np.inf)
 def map_read():
-    mapA=Plot.map_make("mapdata1.txt")
-    mapB=Plot.map_make("mapdata2.txt")
+    mapA=Plot.map_make("mapdata2.txt")
+    mapB=Plot.map_make("mapdata1.txt")
     merge_maps=merge(mapA,mapB)
     icp_matrix.file_write(merge_maps,"merge_map.txt")
     Plot.map_plot("merge_map.txt")
@@ -63,7 +63,7 @@ def optimize():
     global ref_match
     error=[100000,1000]
     cur_error=100
-    lr=0.00001
+    lr=0.0001
     e=0.001
     x=np.array([0.0,0.0,0.0])
     #print("yaa")
