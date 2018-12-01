@@ -9,10 +9,10 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import MagneticField
 from turtlebot3_msgs.msg import Sound
 from time import sleep
+import tf
 import atexit
 import math
 import filetest
-import icp
 pub = ''
 allscandata=""
 class Obstacle():
@@ -37,7 +37,12 @@ class Obstacle():
 		msg = rospy.wait_for_message("odom", Odometry)
 		self.odom_pos_x = msg.pose.pose.position.x
 		self.odom_pos_y = msg.pose.pose.position.y
+
+		self.odom_ori_w = msg.pose.pose.orientation.w
+		self.odom_ori_x = msg.pose.pose.orientation.x
+		self.odom_ori_y = msg.pose.pose.orientation.y
 		self.odom_ori_z = msg.pose.pose.orientation.z
+		return tf.transformations.euler_from_quaternion([self.odom_ori_x,self.odom_ori_y,self.odom_ori_z,self.odom_ori_w])
 
 
 	def obstacle(self):
@@ -48,11 +53,14 @@ class Obstacle():
 				scanlist =[]
 				self.get_scan()
 
-				self.get_odom()
-
-				#print("keisan:"+str(math.atan2(self.odom_pos_y, self.odom_pos_x)))
-				#print("ori:"+str(self.odom_ori_z))
-				scanlist += [self.odom_pos_x, self.odom_pos_y, math.atan2(self.odom_pos_y, self.odom_pos_x)+self.odom_ori_z]
+				(r,q,y)=self.get_odom()
+				if y <= 0:
+					z = y*(-1)
+				elif y > 0:
+					z=2*math.pi - y
+				
+				
+				scanlist += [self.odom_pos_x, self.odom_pos_y, z]
 				scanlist +=self.scan_filter
 
 				scandata=" ".join(map(str, scanlist))+ "\n"
@@ -61,11 +69,10 @@ class Obstacle():
 				global allscandata
 				allscandata +=scandata
 				print(allscandata)
-				sleep(0.5)
+			
 
 			except KeyboardInterrupt:
-				filetest.scan_write(allscandata)
-				icp.scanmatch()
+				filetest.scan_write(allscandata)	
 				stop()
 
 
@@ -88,3 +95,4 @@ def main():
 if __name__ == '__main__':
 	atexit.register(stop)
 	main()
+
